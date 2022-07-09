@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="DtoLoadResultModels\**" />
+    <Compile Remove="ServiceBase\**" />
+    <EmbeddedResource Remove="DtoLoadResultModels\**" />
+    <EmbeddedResource Remove="ServiceBase\**" />
+    <None Remove="DtoLoadResultModels\**" />
+    <None Remove="ServiceBase\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Handlebars.Net" Version="2.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\cpDataCore\cpDataORM\cpDataORM.csproj" />
+    <ProjectReference Include="..\..\cpDataCore\cpDataServices\cpDataServices.csproj" />
+  </ItemGroup>
+
+</Project>
