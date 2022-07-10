@@ -37,7 +37,7 @@ namespace cpDataServices.Services
 
         public override IQueryable<TestCoordinate> GetEntitiesForProjectQry()
         {
-            return _context.TestCoordinates.Where(x => x.TestRequest.ProjectId == ProjectId);
+            return _context.TestCoordinates.Where(x => x.ControlLine_ControlLine.ProjectId == ProjectId && x.TestRequest.ProjectId == ProjectId);
         }
 
         public async Task<List<string>> DeleteCheckAsync(int Id)
@@ -81,7 +81,8 @@ namespace cpDataServices.Services
         {
             try
             {
-                return (await _context.TestCoordinates.CountAsync(x => x.TestRequestId == entity.TestRequestId &&
+                return (await _context.TestCoordinates.CountAsync(x => x.ControlLine == entity.ControlLine &&
+                  x.TestRequestId == entity.TestRequestId &&
                   x.UniqueId != entity.UniqueId)) == 0;
             }
             catch (Exception ex)
@@ -95,7 +96,8 @@ namespace cpDataServices.Services
         {
             try
             {
-                if (entity.TestRequest != null) return entity.TestRequest.ProjectId == ProjectId;
+                if (entity.ControlLine_ControlLine != null && entity.TestRequest != null) return entity.ControlLine_ControlLine.ProjectId == ProjectId && entity.TestRequest.ProjectId == ProjectId;
+                if ((await _context.ControlLines.Where(x => x.ControlLineId == entity.ControlLine && x.ProjectId == ProjectId).CountAsync()) != 1) return false;
                 if ((await _context.TestRequests.Where(x => x.TestRequestId == entity.TestRequestId && x.ProjectId == ProjectId).CountAsync()) != 1) return false;
                 return true;
             }
@@ -108,7 +110,7 @@ namespace cpDataServices.Services
 
         public async override Task<bool> CheckIdsInCurrentProjectAsync(List<int> lstIds)
         {
-            return await _context.TestCoordinates.CountAsync(x => lstIds.Contains(x.TestCoordinatesId) && (x.TestRequest.ProjectId != ProjectId)) == 0;
+            return await _context.TestCoordinates.CountAsync(x => lstIds.Contains(x.TestCoordinatesId) && (x.ControlLine_ControlLine.ProjectId != ProjectId || x.TestRequest.ProjectId != ProjectId)) == 0;
         }
     }
 }

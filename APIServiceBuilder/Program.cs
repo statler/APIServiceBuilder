@@ -64,7 +64,7 @@ namespace APIServiceBuilder
                        .SelectMany(t => t.GetTypes())
                        .FirstOrDefault(t => t.IsClass && t.Namespace == "cpModel.Models" && t.Name == item);
 
-                    ContextSetting.ConnectionString = "Data Source=dgpc\\sqlexpress01;Initial Catalog=QADemoDB_66;Integrated Security=True;MultipleActiveResultSets=False";
+                    ContextSetting.ConnectionString = "Data Source=dgbox\\sqlexpress;Initial Catalog=b101;Integrated Security=True;MultipleActiveResultSets=False";
                     var _context = new cpContext();
                     string entityNameWithNS = "cpModel.Models." + item;
                     var PrimaryKeyId = _context.Model.FindEntityType(entityNameWithNS).FindPrimaryKey().Properties[0].Name;
@@ -142,7 +142,7 @@ namespace APIServiceBuilder
                 }
                 foreach (DeleteEntityInfo deleteEntityInfo in lstDeleters)
                 {
-                    var priority = ServiceTemplate.LstExplicitPriorityProjectDeleteClasses.FirstOrDefault(x=>x.EntityName== deleteEntityInfo.EntityName);
+                    var priority = ServiceTemplate.LstExplicitPriorityProjectDeleteClasses.FirstOrDefault(x => x.EntityName == deleteEntityInfo.EntityName);
                     if (priority != null) deleteEntityInfo.Priority = priority.Priority;
                 }
                 lstDeleters = lstDeleters.OrderByDescending(x => x.Priority).ToList();
@@ -150,10 +150,15 @@ namespace APIServiceBuilder
                 var data = new
                 {
                     lstSetNull = String.Join(Environment.NewLine, lstDeleters.Select(x => x.UpdateString)),
-                    lstDelete = String.Join(Environment.NewLine, lstDeleters.Select(x => x.DeleteString))
+                    lstDelete = String.Join(Environment.NewLine, lstDeleters.Select(x => x.DeleteString)),
+                    lstSetNullForAsync = String.Join(Environment.NewLine, lstDeleters.Select(x => x.UpdateStringForAsync)),
+                    lstDeleteForAsync = String.Join(Environment.NewLine, lstDeleters.Select(x => x.DeleteStringForAsync))
                 };
+                var serviceRegTemplateforAsync = Handlebars.Compile(ServiceTemplate.projectDeleteMethodforAsync);
                 var serviceRegTemplate = Handlebars.Compile(ServiceTemplate.projectDeleteMethod);
 
+                string pathAsync = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "ServiceBase", $"projectMethodAsync.txt");
+                File.WriteAllText(pathAsync, serviceRegTemplateforAsync(data).Replace("&lt;", "<").Replace("&gt;", ">"));
                 string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "ServiceBase", $"projectMethod.txt");
                 File.WriteAllText(path, serviceRegTemplate(data).Replace("&lt;", "<").Replace("&gt;", ">"));
             }
@@ -328,7 +333,7 @@ namespace APIServiceBuilder
             var _context = new cpContext();
             string entityNameWithNS = "cpModel.Models." + item;
             var projectProperty = _context.Model.FindEntityType(entityNameWithNS).GetProperties()?.FirstOrDefault(x => x.GetContainingForeignKeys().Any(y => y.PrincipalEntityType.ClrType.Name == "Project"))?.Name;
-            if (!string.IsNullOrEmpty(projectProperty)) 
+            if (!string.IsNullOrEmpty(projectProperty))
                 return new DeleteEntityInfo(item, $@"x=>x.ProjectId == ProjectId", 1);
 
             else
@@ -341,7 +346,7 @@ namespace APIServiceBuilder
                 {
                     lstIsUqString.Add($@"(x.{fKSet.navigationPropertyName}.{fKSet.navigationProjectPropertyName} == ProjectId)");
                 }
-                if (lstIsUqString.Count==0) return new DeleteEntityInfo(item, $@"x=>{lstIsUqString[0]}", 2);
+                if (lstIsUqString.Count == 0) return new DeleteEntityInfo(item, $@"x=>{lstIsUqString[0]}", 2);
                 var joinedString = String.Join(" || ", lstIsUqString);
                 return new DeleteEntityInfo(item, $@"x=>{joinedString}", 2);
             }

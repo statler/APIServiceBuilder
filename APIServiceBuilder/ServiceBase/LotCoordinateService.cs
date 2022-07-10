@@ -37,7 +37,7 @@ namespace cpDataServices.Services
 
         public override IQueryable<LotCoordinate> GetEntitiesForProjectQry()
         {
-            return _context.LotCoordinates.Where(x => x.Lot.ProjectId == ProjectId);
+            return _context.LotCoordinates.Where(x => x.ControlLine.ProjectId == ProjectId && x.Lot.ProjectId == ProjectId);
         }
 
         public async Task<List<string>> DeleteCheckAsync(int Id)
@@ -81,7 +81,8 @@ namespace cpDataServices.Services
         {
             try
             {
-                return (await _context.LotCoordinates.CountAsync(x => x.LotId == entity.LotId &&
+                return (await _context.LotCoordinates.CountAsync(x => x.ControlLineId == entity.ControlLineId &&
+                  x.LotId == entity.LotId &&
                   x.UniqueId != entity.UniqueId)) == 0;
             }
             catch (Exception ex)
@@ -95,7 +96,8 @@ namespace cpDataServices.Services
         {
             try
             {
-                if (entity.Lot != null) return entity.Lot.ProjectId == ProjectId;
+                if (entity.ControlLine != null && entity.Lot != null) return entity.ControlLine.ProjectId == ProjectId && entity.Lot.ProjectId == ProjectId;
+                if ((await _context.ControlLines.Where(x => x.ControlLineId == entity.ControlLineId && x.ProjectId == ProjectId).CountAsync()) != 1) return false;
                 if ((await _context.Lots.Where(x => x.LotId == entity.LotId && x.ProjectId == ProjectId).CountAsync()) != 1) return false;
                 return true;
             }
@@ -108,7 +110,7 @@ namespace cpDataServices.Services
 
         public async override Task<bool> CheckIdsInCurrentProjectAsync(List<int> lstIds)
         {
-            return await _context.LotCoordinates.CountAsync(x => lstIds.Contains(x.LotCoordinatesId) && (x.Lot.ProjectId != ProjectId)) == 0;
+            return await _context.LotCoordinates.CountAsync(x => lstIds.Contains(x.LotCoordinatesId) && (x.ControlLine.ProjectId != ProjectId || x.Lot.ProjectId != ProjectId)) == 0;
         }
     }
 }

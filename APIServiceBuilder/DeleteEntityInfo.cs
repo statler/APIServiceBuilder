@@ -32,7 +32,9 @@ namespace APIServiceBuilder
 
         public string EntityPlural => $"{EntityName}s".Replace("ys.", "ies.").Replace("ss.", "ses.").Replace("ynopsises.", "ynopses.");
 
-        public string DeleteString => $@"await _context.Set<{EntityName}>().Where({WherePredicate}).DeleteAsync();";
-        public string UpdateString => $@"await _context.SetAllForeignKeysToNullExceptProject_BatchAsync<{EntityName}>({WherePredicate});";
+        public string DeleteStringForAsync => $@"await _context.Set<{EntityName}>().Where({WherePredicate}).DeleteAsync();";
+        public string UpdateStringForAsync => $@"await _context.SetAllForeignKeysToNullExceptProject_BatchAsync<{EntityName}>({WherePredicate});";
+        public string DeleteString => $@"_context.Set<{EntityName}>().Where({WherePredicate}).Delete();";
+        public string UpdateString => $@"_context.SetAllForeignKeysToNullExceptProject_Batch<{EntityName}>({WherePredicate});";
     }
 }

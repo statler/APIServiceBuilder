@@ -117,28 +117,78 @@ namespace cpDataServices.Services
             return await _context.{{EntityName}}s.CountAsync(x => lstIds.Contains(x.{{PrimaryKeyId}}) && ({{CheckIdsInCurrentProjectAsync}})) == 0;
         }
     }
-}";
+}
+";
 
-        public static string projectDeleteMethod = @"
+        public static string projectDeleteMethodforAsync = @"
     public async Task DeleteProjectAsync(int ProjectId)
     {
         //Generated using APIServiceBuilder            
-        if (!await _userService.DoesUserHaveSubscriptionAdminThisProjectAsync())
+        if (!await _userService.DoesUserHaveSubscriptionAdminThisProjectAsync(ProjectId))
                 throw new AuthorizationException(""A user must be subscription administrator on the same subscription as the project to delete it."");
         using (var _tx = _context.Database.CurrentTransaction ?? await _context.Database.BeginTransactionAsync())
         {
             try
             {
-                {{lstSetNull}}
-                {{lstDelete}}
+                {{lstSetNullForAsync}}
+                {{lstDeleteForAsync}}
                 await _context.Projects.Where(x => x.ProjectId == ProjectId).DeleteAsync();
                 _tx.Commit();
+                foreach (User user in await _context.Users.Where(x => x.ProjectId == ProjectId && x.Username == null).ToListAsync())
+                {
+                    try
+                    {
+                        _context.Users.Remove(user);
+                        await _context.SaveChangesAsync();
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                }
                 await _context.Users.Where(x => x.ProjectId == ProjectId && x.Username == null).DeleteAsync();
             }
             catch (Exception ex)
             {
                 if (_context.Database.CurrentTransaction!=null) _tx.Rollback();
                 Log.Error(ex, ""Error deleting Project(DeleteProjectAsync)"");
+                throw;
+            }
+        }
+    }
+";
+
+        public static string projectDeleteMethod = @"
+    public void DeleteProject(int ProjectId)
+    {
+        //Generated using APIServiceBuilder            
+        if (!_userService.IsSubscriptionAdminCurrentProject())
+                throw new AuthorizationException(""A user must be subscription administrator on the same subscription as the project to delete it."");
+        using (var _tx = _context.Database.CurrentTransaction ?? _context.Database.BeginTransaction())
+        {
+            try
+            {
+                {{lstSetNull}}
+                {{lstDelete}}
+                _context.Projects.Where(x => x.ProjectId == ProjectId).Delete();
+                _tx.Commit();
+                foreach (User user in _context.Users.Where(x => x.ProjectId == ProjectId && x.Username == null))
+                {
+                    try
+                    {
+                        _context.Users.Remove(user);
+                        _context.SaveChanges();
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                if (_context.Database.CurrentTransaction!=null) _tx.Rollback();
+                Log.Error(ex, ""Error deleting Project(DeleteProject)"");
                 throw;
             }
         }
@@ -198,12 +248,14 @@ namespace cpDataServices
         public static List<string> LstExplicitExcludeProjectDeleteClasses = new List<string>() {
             "ApprovalCategory",
             "Division",
+            "ExternalApi",
             "ForecastMethod",
-            "Supplier",
             "IncidentType",
             "InsuranceType",
             "KeyDateType",
+            "LogInfo",
             "LotQtyStatus",
+            "Notification",
             "Permission",
             "Position",
             "Project",
@@ -211,6 +263,7 @@ namespace cpDataServices
             "Role",
             "RolePermission",
             "Subscriber",
+            "Supplier",
             "SystemControl",
             "SystemSubscriberControl",
             "TemplateType",
@@ -224,7 +277,10 @@ namespace cpDataServices
         new DeleteEntityInfo("ForecastCashflow","x => x.ForecastDetail.ForecastVersion.ProjectId == ProjectId",5),
         new DeleteEntityInfo("ForecastCostEstimate","x => x.ForecastDetail.ForecastVersion.ProjectId == ProjectId",5),
         new DeleteEntityInfo("LotItpQty","x => x.LotItp.Lot.ProjectId == ProjectId",5),
+        new DeleteEntityInfo("LotItpUser","x => x.LotItp.Lot.ProjectId == ProjectId",5),
+        new DeleteEntityInfo("ProgressClaimReviewQuantity","x => x.ProgressClaimDetail.ProgressClaimVersion.ProjectId == ProjectId",5),
         new DeleteEntityInfo("RiskHazard","x => x.RiskActivityStep.RiskActivity.ProjectId == ProjectId",5),
+        new DeleteEntityInfo("SurveyResult","x => x.SurveyResultSet.SurveyRequest.ProjectId == ProjectId",5),
         new DeleteEntityInfo("TestResult","x => x.TestRequestTest.TestRequest.ProjectId == ProjectId",5),
         new DeleteEntityInfo("WorkflowActionPoint","x => x.WorkflowAction.Workflow.ProjectId == ProjectId",5),
         new DeleteEntityInfo("WorkflowActionRole","x => x.WorkflowAction.Workflow.ProjectId == ProjectId",5),
@@ -246,18 +302,18 @@ namespace cpDataServices
             "AreaCode",
             "Atp",
             "AtpLot",
-"CnApproval",
-"CnControlledDoc",
-"CnEmail",
-"CnIncident",
-"CnInstruction",
-"CnItp",
-"CnLot",
-"CnNotice",
-"CnPhoto",
-"CnResponse",
-"CnTo",
-"CnVariation",
+            "CnApproval",
+            "CnControlledDoc",
+            "CnEmail",
+            "CnIncident",
+            "CnInstruction",
+            "CnItp",
+            "CnLot",
+            "CnNotice",
+            "CnPhoto",
+            "CnResponse",
+            "CnTo",
+            "CnVariation",
             "ContractNotice",
             "ControlLine",
             "ControlLinePoint",

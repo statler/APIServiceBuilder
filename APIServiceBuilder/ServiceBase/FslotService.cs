@@ -37,7 +37,7 @@ namespace cpDataServices.Services
 
         public override IQueryable<FsLot> GetEntitiesForProjectQry()
         {
-            return _context.FsLots.Where(x => x.FileStoreDoc.ProjectId == ProjectId && x.Lot.ProjectId == ProjectId);
+            return _context.FsLots.Where(x => x.FileStoreDoc.ProjectId == ProjectId && x.Lot.ProjectId == ProjectId && x.LotMapSection.ProjectId == ProjectId);
         }
 
         public async Task<List<string>> DeleteCheckAsync(int Id)
@@ -83,6 +83,7 @@ namespace cpDataServices.Services
             {
                 return (await _context.FsLots.CountAsync(x => x.FsId == entity.FsId &&
                   x.LotId == entity.LotId &&
+                  x.LotMapSectionId == entity.LotMapSectionId &&
                   x.UniqueId != entity.UniqueId)) == 0;
             }
             catch (Exception ex)
@@ -96,9 +97,10 @@ namespace cpDataServices.Services
         {
             try
             {
-                if (entity.FileStoreDoc != null && entity.Lot != null) return entity.FileStoreDoc.ProjectId == ProjectId && entity.Lot.ProjectId == ProjectId;
+                if (entity.FileStoreDoc != null && entity.Lot != null && entity.LotMapSection != null) return entity.FileStoreDoc.ProjectId == ProjectId && entity.Lot.ProjectId == ProjectId && entity.LotMapSection.ProjectId == ProjectId;
                 if ((await _context.FileStoreDocs.Where(x => x.FileStoreDocId == entity.FsId && x.ProjectId == ProjectId).CountAsync()) != 1) return false;
                 if ((await _context.Lots.Where(x => x.LotId == entity.LotId && x.ProjectId == ProjectId).CountAsync()) != 1) return false;
+                if ((await _context.LotMapSections.Where(x => x.LotMapSectionId == entity.LotMapSectionId && x.ProjectId == ProjectId).CountAsync()) != 1) return false;
                 return true;
             }
             catch (Exception ex)
@@ -110,7 +112,7 @@ namespace cpDataServices.Services
 
         public async override Task<bool> CheckIdsInCurrentProjectAsync(List<int> lstIds)
         {
-            return await _context.FsLots.CountAsync(x => lstIds.Contains(x.FsLotId) && (x.FileStoreDoc.ProjectId != ProjectId || x.Lot.ProjectId != ProjectId)) == 0;
+            return await _context.FsLots.CountAsync(x => lstIds.Contains(x.FsLotId) && (x.FileStoreDoc.ProjectId != ProjectId || x.Lot.ProjectId != ProjectId || x.LotMapSection.ProjectId != ProjectId)) == 0;
         }
     }
 }
